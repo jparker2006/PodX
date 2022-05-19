@@ -1,0 +1,58 @@
+{
+  "Subscriptions": [
+    {
+      "Pivot": "",
+      "StartIn": "90",
+      "EndIn": "120",
+      "URL": "",
+      "Eps Played": [
+        {
+          "PubDate": "",
+          "EpisodeNum": "",
+          "CurrentLocation": ""
+        },
+        {
+          "PubDate": "",
+          "EpisodeNum": "",
+          "CurrentLocation": ""
+        }
+      ]
+    },
+    {
+      "Linux Unplugged": "",
+      "StartIn": "0",
+      "EndIn": "0",
+      "URL": "",
+      "Eps Played": [
+        {
+          "PubDate": "",
+          "EpisodeNum": "",
+          "CurrentLocation": ""
+        },
+        {
+          "PubDate": "",
+          "EpisodeNum": "",
+          "CurrentLocation": ""
+        }
+      ]
+    },
+    {
+      "The Powers That Be: Daily": "",
+      "StartIn": "60",
+      "EndIn": "120",
+      "URL": "",
+      "Eps Played": [
+        {
+          "PubDate": "",
+          "EpisodeNum": "",
+          "CurrentLocation": ""
+        },
+        {
+          "PubDate": "",
+          "EpisodeNum": "",
+          "CurrentLocation": ""
+        }
+      ]
+    }
+  ]
+}
