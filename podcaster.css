@@ -1,0 +1,36 @@
+/* global properties */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;700&display=swap');
+body { background-color: white; margin: 0; padding: 0; }
+button { cursor: pointer; }
+* { box-sizing: border-box; font-family: 'Inter', sans-serif; font-weight: 300; }
+a { color: #0645ad; text-decoration: none; cursor: pointer; }
+textarea { resize: none; }
+input:focus, textarea:focus { outline: none; }
+.center { position: absolute; left: 50%; transform: translate(-50%); }
+
+/* global controller */
+.g_Audio { position: absolute; bottom: 5px; width: 600px; height: 85px; /*border: 1px solid;*/ }
+.g_currentPlaying { height: 85px; width: 85px; cursor: pointer; float: left; margin-right: 5px; }
+.g_audioButton { width: 90px; height: 30px; margin-right: 5px; text-align: center; padding: 4px; background: white; border: 1px solid black; border-radius: 4px;}
+.g_audioButtonIcon { width: 20px; }
+.g_currentTitle { width: 510px; /*border: 1px solid;*/ position: absolute; left: 90px; height: 20px; text-align: center; bottom: 0px; }
+.g_timeScroller { width: 510px; height: 25px; /*border: 1px solid;*/ position: absolute; left: 90px; margin-top: 5px; }
+.g_timeStampContainer { font-size: 12px; width: 55px; height: 25px; padding-top: 3px; text-align: center; }
+.g_rightTimeStampContainer { position: absolute; right: 0; bottom: 0px; }
+.g_timeRange { top: 0px; width: 75%; cursor: pointer; }
+.g_timeRange::-moz-range-track { background: blue; border-radius: 5px; border: 1px solid blue; }
+.g_timeRange::-moz-range-thumb { border: 1px solid black; height: 12px; width: 12px; border-radius: 50%; background: white; cursor: pointer; }
+.g_timeRange:focus { outline: none; }
+.g_audioRange { width: 23%; left: 89%; transform: translate(-89%); top: 5px; }
+.g_volumeIcon { width: 24px; height: 24px; position: absolute; top: 3px; }
+
+/* global header */
+.g_Header { position: absolute; top: 0px; width: 100%; height: 45px; background: lightblue; z-index: 2; }
+.g_HeaderContainer { width: 600px; height: 40px; color: black; top: 3px; }
+.g_HeaderLinkContainer { width: 600px; height: 40px; position: absolute; top: 50%; transform: translate(0, -50%); }
+.g_HeaderName { width: 153px; height: 40px; font-size: 30px; font-weight: 700; cursor: pointer; float: left; }
+.g_HeaderLink { font-size: 18px; height: auto; float: left; position: absolute; top: 50%; transform: translate(0, -50%); border-bottom: 1px dotted blue; cursor: pointer; }
+.g_headerLinkText { color: black; }
+
+/* global main container */
+.g_main { width: 600px; height: calc(100% - 150px); border: 1px solid black; top: 50px; }
