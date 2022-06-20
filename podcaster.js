@@ -21,13 +21,9 @@ const Header = () => {
     sPage += "<div class='g_HeaderContainer center'>";
     sPage += "<div class='g_HeaderLinkContainer'>";
     sPage += "<div class='g_HeaderName' onClick='MainFrame()'>Podcaster</div>";
-    sPage += "<div class='g_HeaderLink' style='width: 116px; left: 168px;'>Subscriptions</div>";
-    sPage += "<div class='g_HeaderLink' style='width: 61px; left: 298px;'>History</div>";
-    sPage += "<div class='g_HeaderLink' style='width: 98px; left: 373px;' onClick='BugFrame()'>Bug Report</div>";
-    sPage += "<div class='g_HeaderLink' style='width: 72px; left: 485px;'>Account</div>";
-    sPage += "<div class='g_HeaderLink' style='width: 26px; left: 571px;'>";
-    sPage += "<a href='https://github.com/jparker2006/Podcasts' class='g_headerLinkText' target='_blank'>Git</a>";
-    sPage += "</div>";
+    sPage += "<div class='g_HeaderLink' style='width: 116px; left: 160px;'>Subscriptions</div>";
+    sPage += "<div class='g_HeaderLink' style='width: 98px; left: 283px;' onClick='BugFrame()'>Bug Report</div>";
+    sPage += "<div class='g_HeaderLink' style='width: 72px; left: 388px;'>Account</div>";
     sPage += "</div>";
     sPage += "</div>";
     document.getElementById('g_Header').innerHTML = sPage;
@@ -36,16 +32,16 @@ const Header = () => {
 const ControlBar = () => {
     let sPage = "";
     sPage += "<img id='g_currentPlaying' class='g_currentPlaying' src='https://jakehenryparker.com/Reststop/working.png' />";
-    sPage += "<button class='g_audioButton'><img src='img/rewind.png' class='g_audioButtonIcon' style='margin-right: 4px;' /></button>";
-    sPage += "<button class='g_audioButton'><img src='img/play.png' class='g_audioButtonIcon' /></button>";
-    sPage += "<button class='g_audioButton'><img src='img/forward.png' class='g_audioButtonIcon' /></button>";
-    sPage += "<img src='img/mute.png' class='g_volumeIcon' style='left: 379px;' />";
-    sPage += "<input type='range' class='g_timeRange g_audioRange center' min=0 max=1 step=any value=0.5 onChange='dragAudio()'>";
-    sPage += "<img src='img/fullvolume.png' class='g_volumeIcon' style='left: 557px;' />";
+    sPage += "<button class='g_audioButton' onClick='moveAudioPosition(" + false + ")'><img src='img/rewind.png' class='g_audioButtonIcon' style='margin-right: 4px;' /></button>";
+    sPage += "<button class='g_audioButton' onClick='updatePlayingStateButton()'><img src='img/play.png' id='playingState' class='g_audioButtonIcon' /></button>";
+    sPage += "<button class='g_audioButton' onClick='moveAudioPosition(" + true + ")'><img src='img/forward.png' class='g_audioButtonIcon' /></button>";
+    sPage += "<img src='img/mute.png' class='g_volumeIcon' style='left: 379px;' onClick='dragAudio(0)' />";
+    sPage += "<input id='volumeRange' type='range' class='g_timeRange g_audioRange center' min=0 max=1 step=any value=0.5 onChange='dragAudio()'>";
+    sPage += "<img src='img/fullvolume.png' class='g_volumeIcon' style='left: 557px;' onClick='dragAudio(1)' />";
     sPage += "<div id='g_timeScroller' class='g_timeScroller'>";
-    sPage += "<div class='g_timeStampContainer'>0:00:00</div>"; // change to x:00 if podcast < 60 minutes
-    sPage += "<input type='range' class='g_timeRange center' min=0 max=1 step=any value=0>";
-    sPage += "<div class='g_timeStampContainer g_rightTimeStampContainer'>0:00:00</div>";
+    sPage += "<div id='beginTimeStamp' class='g_timeStampContainer'>0:00:00</div>"; // change to x:00 if podcast < 60 minutes
+    sPage += "<input type='range' id='audioPosRange' class='g_timeRange center' min=0 max=1 step=any value=0 onChange='dragAudioPosition(" + true + ")'>";
+    sPage += "<div id='endTimeStamp' class='g_timeStampContainer g_rightTimeStampContainer'>0:00:00</div>";
     sPage += "</div>";
     sPage += "<div id='g_currentTitle' class='g_currentTitle'>Podcaster</div>";
     sPage += "<audio id='g_player'></audio>";
@@ -115,7 +111,7 @@ const searchThroughEpisodes = (aItems) => {
     let sPage = "";
     let sQuery = document.getElementById('episodeSearch').value;
     for (let i=0; i<aItems.length; i++) {
-        let sCurrTitle = aItems[i].firstElementChild.textContent;
+        let sCurrTitle = aItems[i].getElementsByTagName("title")[0].childNodes[0].nodeValue;
         if (-1 == sCurrTitle.toLowerCase().indexOf(sQuery.toLowerCase()))
             continue;
         sPage += "<div id='"+i+"' class='episodeTitleDisplay'>";
@@ -129,7 +125,68 @@ const searchThroughEpisodes = (aItems) => {
 }
 
 const playPodcast = (objEpisode) => {
-    console.log(objEpisode);
+    document.getElementById('g_currentPlaying').src = objEpisode.parentElement.getElementsByTagName("url")[0].childNodes[0].nodeValue;
+    document.getElementById('g_currentPlaying').onclick = function() { parseRSSLink(objEpisode.baseURI, PodcastOverviewFrame) };
+    document.getElementById('g_currentTitle').innerHTML = objEpisode.getElementsByTagName("title")[0].childNodes[0].nodeValue.substring(0, 57);
+    if (57 == document.getElementById('g_currentTitle').innerHTML.length)
+        document.getElementById('g_currentTitle').innerHTML += "...";
+    document.getElementById('g_player').pause();
+    if (!objEpisode.lastElementChild.attributes.url) { // atom format
+        let nEnclosureIndex = -1;
+        for (let i=0; i<objEpisode.childNodes.length; i++) {
+            if ("enclosure" == objEpisode.childNodes[i].localName) {
+                nEnclosureIndex = i;
+                break;
+            }
+        }
+        document.getElementById('g_player').src = objEpisode.childNodes[nEnclosureIndex].attributes.url.nodeValue;
+        document.getElementById('g_player').type = objEpisode.childNodes[nEnclosureIndex].attributes.type.nodeValue;
+    }
+    else { // rss format
+        document.getElementById('g_player').src = objEpisode.lastElementChild.attributes.url.nodeValue;
+        document.getElementById('g_player').type = objEpisode.lastElementChild.attributes.type.nodeValue;
+    }
+    setEndTimestamp();
+    updatePlayingStateButton(true);
+}
+
+var t_updateAudioPos;
+const updatePlayingStateButton = (bForceIt) => {
+    if (g_objUserData.paused || bForceIt) {
+        document.getElementById('playingState').src = 'img/pause.png';
+        document.getElementById('g_player').play();
+        g_objUserData.paused = false;
+        t_updateAudioPos = setInterval(dragAudioPosition, 1000);
+    }
+    else {
+        document.getElementById('playingState').src = 'img/play.png';
+        document.getElementById('g_player').pause();
+        g_objUserData.paused = true;
+        clearInterval(t_updateAudioPos);
+    }
+}
+
+const setEndTimestamp = () => {
+    setTimeout(function() {
+        if (!document.getElementById('g_player').duration)
+            setEndTimestamp();
+        else {
+            let nSeconds = Math.round(document.getElementById('g_player').duration)
+            document.getElementById('endTimeStamp').innerHTML = secondsToHms(nSeconds);
+        }
+    }, 200);
+}
+
+const secondsToHms = (d) => {
+    let h = Math.floor(d / 3600);
+    let m = Math.floor(d % 3600 / 60);
+    let s = Math.floor(d % 3600 % 60);
+    let hDisplay = h > 0 ? "0" + h + ":" : "00:";
+    let mDisplay = m >= 10 ? "" : "0";
+    mDisplay += m > 0 ? m + ":" : "0:";
+    let sDisplay = s >= 10 ? "" : "0";
+    sDisplay += s > 0 ? s : "0";
+    return hDisplay + mDisplay + sDisplay;
 }
 
 const showMeTheBugs = () => {
@@ -171,6 +228,13 @@ const submitBug = () => {
         else
             document.getElementById('feedback').innerHTML = "<br>Possible network error";
     }
+}
+
+const moveAudioPosition = (bFoward) => {
+    if (bFoward)
+        document.getElementById('g_player').currentTime += 30;
+    else
+        document.getElementById('g_player').currentTime -= 10;
 }
 
 const checkTypingDelay = (sSearch) => {
@@ -220,8 +284,28 @@ const pullPodcasts = (sSearch) => {
     }
 }
 
-const dragAudio = () => {
-    alert();
+const dragAudio = (nHit) => {
+    if (0 == nHit) {
+        document.getElementById('g_player').volume = 0;
+        document.getElementById('volumeRange').value = 0;
+    }
+    else if (1 == nHit) {
+        document.getElementById('g_player').volume = 1;
+        document.getElementById('volumeRange').value = 1;
+    }
+    else
+        document.getElementById('g_player').volume = document.getElementById('volumeRange').value;
+}
+
+
+const dragAudioPosition = (bFromRange) => {
+    if (bFromRange)
+        document.getElementById('g_player').currentTime = document.getElementById('audioPosRange').value * document.getElementById('g_player').duration;
+    else {
+        document.getElementById('audioPosRange').value = document.getElementById('g_player').currentTime / document.getElementById('g_player').duration;
+        let nSeconds = Math.round(document.getElementById('g_player').currentTime)
+        document.getElementById('beginTimeStamp').innerHTML = secondsToHms(nSeconds);
+    }
 }
 
 const HashThis = (sText, nRounds) => {

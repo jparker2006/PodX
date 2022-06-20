@@ -28,7 +28,7 @@ function pullPodcasts ($jsonPullData) {
     $aPodcasts = [];
 
     if (!$objPullData->bSearching) {
-        $sSQL = "SELECT COUNT(*) FROM Podcasts";
+        $sSQL = "SELECT COUNT(*) FROM podcasts";
         $tResult = QueryDB($sSQL);
         $nPodcasts = $tResult->fetch_assoc()["COUNT(*)"];
         $aRandomPulls = [random_int(1, $nPodcasts)];
@@ -41,7 +41,7 @@ function pullPodcasts ($jsonPullData) {
         }
 
         for ($i=0; $i<15; $i++) {
-            $sSQL = "SELECT * FROM Podcasts WHERE id=" . $aRandomPulls[$i];
+            $sSQL = "SELECT * FROM podcasts WHERE id=" . $aRandomPulls[$i];
             $tResult = QueryDB($sSQL);
             $row = $tResult->fetch_assoc();
             $aPodcasts[$i] = new stdClass();
@@ -54,7 +54,7 @@ function pullPodcasts ($jsonPullData) {
     }
     else {
         $objPullData->search = "%" . $objPullData->search . "%";
-        $stmt = $dbconnect->prepare("SELECT * FROM Podcasts WHERE title LIKE ? OR description LIKE ? ORDER BY id DESC LIMIT 15");
+        $stmt = $dbconnect->prepare("SELECT * FROM podcasts WHERE title LIKE ? OR description LIKE ? ORDER BY id DESC LIMIT 15");
         $stmt->bind_param("ss", $objPullData->search, $objPullData->search);
         $stmt->execute();
         $tResult = $stmt->get_result();
@@ -82,7 +82,7 @@ function insertBug ($sBug) {
     $db = "podcaster";
     $dbconnect = new mysqli($dbhost, $dbuser, $dbpass, $db);
 
-    $stmt = $dbconnect->prepare("INSERT INTO Bugs (bug) VALUES (?)");
+    $stmt = $dbconnect->prepare("INSERT INTO bugs (issue) VALUES (?)");
     $stmt->bind_param("s", $sBug);
     $bStatus = $stmt->execute();
     $stmt->close();
@@ -91,13 +91,14 @@ function insertBug ($sBug) {
 }
 
 function pullBugs () {
-    $sSQL = "SELECT * FROM Bugs LIMIT 15";
+    $sSQL = "SELECT * FROM bugs LIMIT 15";
     $tResult = QueryDB($sSQL);
     $aBugs = [];
     for ($i=0; $i<$tResult->num_rows; $i++) {
         $row = $tResult->fetch_assoc();
         $aBugs[$i] = new stdClass();
-        $aBugs[$i]->bug = $row["bug"];
+        $aBugs[$i]->bug = $row["issue"];
+        $aBugs[$i]->fix_started = $row["created"];
         $aBugs[$i]->created = $row["created"];
     }
     if (0 == sizeof($aBugs))
