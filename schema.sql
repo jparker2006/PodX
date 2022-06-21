@@ -10,8 +10,8 @@ CREATE TABLE users (
     id int unsigned auto_increment primary key,
     username varchar(60) not null,
     password char(64) not null,
-    data varchar(2000),
-    created timestamp default current_timestamp
+    data varchar(4000),
+    created timestamp default current_timestamp,
     last_used timestamp default current_timestamp on update current_timestamp
 );
 

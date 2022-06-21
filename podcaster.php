@@ -6,7 +6,12 @@ else if (isset($_POST['insertBug']))
     $sBug = $_POST['insertBug'];
 else if (isset($_POST['pullBugs']))
     $bPullTheBugs = $_POST['pullBugs'];
-
+else if (isset($_POST['uniqueUN']))
+    $sUsername = $_POST['uniqueUN'];
+else if (isset($_POST['login']))
+    $jsonCredentials = $_POST['login'];
+else if (isset($_POST['createAccount']))
+    $jsonUserData = $_POST['createAccount'];
 
 if ($jsonPullData)
     $sFeedback = pullPodcasts ($jsonPullData);
@@ -14,6 +19,12 @@ else if ($sBug)
     $sFeedback = insertBug ($sBug);
 else if ($bPullTheBugs)
     $sFeedback = pullBugs ();
+else if ($sUsername)
+    $sFeedback = uniqueUN ($sUsername);
+else if ($jsonCredentials)
+    $sFeedback = login ($jsonCredentials);
+else if ($jsonUserData)
+    $sFeedback = createAccount ($jsonUserData);
 
 echo $sFeedback;
 
@@ -104,6 +115,76 @@ function pullBugs () {
     if (0 == sizeof($aBugs))
         return null;
     return json_encode ($aBugs);
+}
+
+function uniqueUN ($sUsername) {
+    $dbhost = 'localhost';
+    $dbuser = 'podcasts_site';
+    $dbpass = '0ShF3HctflFXwkhQSYte';
+    $db = "podcaster";
+    $dbconnect = new mysqli($dbhost, $dbuser, $dbpass, $db);
+
+    $stmt = $dbconnect->prepare("SELECT * FROM users WHERE username=?");
+    $stmt->bind_param("s", $sUsername);
+    $stmt->execute();
+    $tResult = $stmt->get_result();
+    $stmt->close();
+    $dbconnect->close();
+
+    return 0 == $tResult->num_rows ? $sUsername : null;
+}
+
+function login ($jsonCredentials) {
+    $objCredentials = json_decode($jsonCredentials);
+    $dbhost = 'localhost';
+    $dbuser = 'podcasts_site';
+    $dbpass = '0ShF3HctflFXwkhQSYte';
+    $db = "podcaster";
+    $dbconnect = new mysqli($dbhost, $dbuser, $dbpass, $db);
+
+    $stmt = $dbconnect->prepare("SELECT * FROM users WHERE username=? AND password=?");
+    $stmt->bind_param("ss", $objCredentials->username, $objCredentials->password);
+    $stmt->execute();
+    $tResult = $stmt->get_result();
+    $row = $tResult->fetch_assoc();
+    $stmt->close();
+    $dbconnect->close();
+
+    if (1 != $tResult->num_rows)
+        return false;
+
+    $sSQL = "UPDATE users SET last_used=CURRENT_TIMESTAMP WHERE id=" . $row["id"];
+    QueryDB ($sSQL);
+
+    $objUserData = new stdClass();
+    $objUserData->id= $row["id"];
+    $objUserData->data = $row["data"];
+
+    return json_encode($objUserData);
+}
+
+function createAccount ($jsonUserData) {
+    $objUserData = json_decode($jsonUserData);
+
+    $dbhost = 'localhost';
+    $dbuser = 'podcasts_site';
+    $dbpass = '0ShF3HctflFXwkhQSYte';
+    $db = "podcaster";
+    $dbconnect = new mysqli($dbhost, $dbuser, $dbpass, $db);
+
+    $stmtI = $dbconnect->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+    $stmtI->bind_param("ss", $objUserData->username, $objUserData->password);
+    $stmtI->execute();
+    $stmtI->close();
+
+    $stmtS = $dbconnect->prepare("SELECT id FROM users WHERE username=?");
+    $stmtS->bind_param("s", $objUserData->username);
+    $stmtS->execute();
+    $tResult = $stmtS->get_result();
+    $row = $tResult->fetch_assoc();
+    $dbconnect->close();
+
+    return $row["id"];
 }
 
 function QueryDB ($sSQL) {
