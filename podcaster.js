@@ -3,11 +3,14 @@
 /*
 screen states:
 - screen doesnt matter: -1
-- main frame: 0
-- bug frame: 1
-- sign up frame: 2
-- log in frame: 3
-- account frame: 4
+- main: 0
+- bug: 1
+- sign up: 2
+- log in: 3
+- account: 4
+- subscriptions: 5
+- add pod: 6
+- the latest: 7
 */
 
 var g_objUserData = {};
@@ -18,6 +21,8 @@ onload = () => {
     let PW = getCookie('PW');
     if (UN && PW)
         Login(UN, PW);
+    else
+        g_objUserData.data = [];
     Header();
     ControlBar();
     MainFrame();
@@ -28,8 +33,8 @@ const Header = () => {
     sPage += "<div class='g_HeaderContainer center'>";
     sPage += "<div class='g_HeaderLinkContainer'>";
     sPage += "<div class='g_HeaderName' onClick='MainFrame()'>Podcaster</div>";
-    sPage += "<div class='g_HeaderLink' style='width: 116px; left: 160px;'>Subscriptions</div>";
-    sPage += "<div class='g_HeaderLink' style='width: 98px; left: 283px;' onClick='BugFrame()'>Bug Report</div>";
+    sPage += "<div class='g_HeaderLink' style='width: 116px; left: 160px;' onClick='GoToSubscriptions()'>Subscriptions</div>";
+    sPage += "<div class='g_HeaderLink' style='width: 98px; left: 283px; text-align: center;' onClick='GoToTheLatest()'>The Latest</div>";
     sPage += "<div class='g_HeaderLink' style='width: 72px; left: 388px;' onClick='GoToAccount()'>Account</div>";
     sPage += "</div>";
     sPage += "</div>";
@@ -61,7 +66,9 @@ const MainFrame = () => {
     sPage += "<div class='leftContainer'>";
     sPage += "<div class='innerLeft'>";
     sPage += "<span style='font-size: 20px;'>Search for podcasts:</span><br>";
-    sPage += "<input style='width: 90%;' onKeyUp='checkTypingDelay(this.value)' placeholder='Enter Search' />";
+    sPage += "<input style='width: 90%;' onKeyUp='checkTypingDelay(this.value)' placeholder='Enter Search' /><br>";
+    sPage += "<div class='subsection' onClick='AddPodFrame()'>Add a Podcast</div>";
+    sPage += "<div class='subsection' onClick='BugFrame()'>Bug Report</div>";
     sPage += "</div>";
     sPage += "</div>";
     sPage += "<div id='podcastsDisplay' class='podcastsDisplay'>";
@@ -69,6 +76,71 @@ const MainFrame = () => {
     document.getElementById('Main').innerHTML = sPage;
     pullPodcasts();
     g_objUserData.state = 0;
+}
+
+const AddPodFrame = () => {
+    if (6 == g_objUserData.state) return;
+    let sPage = "";
+    sPage += "<div class='g_main addPodContainer'>";
+    sPage += "<textarea id='podLink' class='addPodTA' placeholder='Insert RSS/Atom Link'></textarea>";
+    sPage += "<button class='addPodButton' onClick='initPodcastToAdd()'>Add Podcast</button>";
+    sPage += "<div id='feedback' style='width: 200px; text-align: center; margin-left: auto; margin-right: auto;'></div>";
+    sPage += "</div>";
+    document.getElementById('Main').innerHTML = sPage;
+    g_objUserData.state = 6;
+}
+
+const TheLatestFrame = () => {
+    if (7 == g_objUserData.state) return;
+    let sPage = "";
+    sPage += "<div class='g_main' style='border: 1px solid black;'>";
+    if (0 == g_objUserData.data.length) {
+        sPage += "<div class='findSubscriptions' style='padding: 7px;' onClick='MainFrame()'>Subscribe to Podcasts to See The Latest of Them</div>";
+        sPage += "</div>";
+        document.getElementById('Main').innerHTML = sPage;
+        g_objUserData.state = 7;
+        return;
+    }
+    let aNewEpisodes = [];
+    for (let i=0; i<g_objUserData.data.length; i++) {
+        fetch(g_objUserData.data[i].link)
+        .then(response => response.text())
+        .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
+        .then(data => {
+            let aItems = data.querySelectorAll("item");
+            for (let j=0; j<3; j++) {
+                let objEpisode = {};
+                objEpisode.data = aItems[j];
+                objEpisode.date = aItems[j].getElementsByTagName("pubDate")[0].textContent;
+                objEpisode.title = aItems[j].getElementsByTagName("title")[0].childNodes[0].nodeValue;
+                aNewEpisodes.push(objEpisode);
+            }
+        });
+    }
+    console.log(aNewEpisodes);
+    sPage += "</div>";
+    document.getElementById('Main').innerHTML = sPage;
+    g_objUserData.state = 7;
+}
+
+const initPodcastToAdd = () => {
+    let sLink = document.getElementById('podLink').value.trim();
+    parseRSSLink(sLink, AddPodToDB, 0);
+}
+
+const AddPodToDB = (xmlDoc, nID) => { // bogus id
+    let objNewPodcast = {};
+    objNewPodcast.title = xmlDoc.getElementsByTagName("title")[0].childNodes[0].nodeValue;
+    objNewPodcast.description = xmlDoc.getElementsByTagName("description")[0].childNodes[0].nodeValue;
+    objNewPodcast.link = xmlDoc.URL;
+    let jsonNewPodcast = JSON.stringify(objNewPodcast);
+    postFileFromServer("podcaster.php", "addPodcastToDatabase=" + encodeURIComponent(jsonNewPodcast), addPodcastToDatabaseCallback);
+    function addPodcastToDatabaseCallback(data) {
+        if (data) {
+            let objPodcast = JSON.parse(data);
+            parseRSSLink(objPodcast.link, PodcastOverviewFrame, objPodcast.id);
+        }
+    }
 }
 
 const BugFrame = () => {
@@ -90,7 +162,7 @@ const BugFrame = () => {
     g_objUserData.state = 1;
 }
 
-const PodcastOverviewFrame = (xmlDoc) => {
+const PodcastOverviewFrame = (xmlDoc, nID) => {
     let sTitle = xmlDoc.getElementsByTagName("title")[0].childNodes[0].nodeValue;
     let sDescription = xmlDoc.getElementsByTagName("description")[0].childNodes[0].nodeValue;
     let sImgURL = xmlDoc.getElementsByTagName("url")[0].childNodes[0].nodeValue;
@@ -101,6 +173,17 @@ const PodcastOverviewFrame = (xmlDoc) => {
     sPage += "<span style='font-size: 17px; font-weight: 500;'>" + sTitle + "</span><br>";
     sPage += "<img src='" + sImgURL + "' style='width: 120px; height: 120px;'</img><br>";
     sPage += "<input id='episodeSearch' style='width: 200px;' placeholder='Search for an Episode' /><br>";
+    let bSubscribed = false;
+    for (let i=0; i<g_objUserData.data.length; i++) {
+        if (nID == g_objUserData.data[i].id) {
+            bSubscribed = true;
+            break;
+        }
+    }
+    if (bSubscribed)
+        sPage += "<button id='subscribeButton' class='subscribeButton' onClick='Unsubscribe("+nID+")'>Unsubscribe</button><br>";
+    else
+        sPage += "<button id='subscribeButton' class='subscribeButton' onClick='preSubscribeToPodcast("+nID+", \""+xmlDoc.URL+"\", \""+sTitle+"\")'>Subscribe</button><br>";
     sPage += "<span style='font-size: 12px;'>" + sDescription + "</span><br>";
     sPage += "</div>";
     sPage += "</div>";
@@ -112,6 +195,65 @@ const PodcastOverviewFrame = (xmlDoc) => {
     g_objUserData.state = -1;
     document.getElementById('episodeSearch').onkeyup = function() { searchThroughEpisodes(aItems) };
     searchThroughEpisodes(aItems);
+}
+
+const preSubscribeToPodcast = (nID, sLink, sTitle) => {
+    if (g_objUserData.bLoggedIn)
+        Subscribe(nID, sLink, sTitle);
+    else
+        SignUpFrame();
+}
+
+const Subscribe = (nID, sLink, sTitle) => {
+    let objNewPod = {};
+    objNewPod.id = nID;
+    objNewPod.title = sTitle;
+    objNewPod.link = sLink
+    g_objUserData.data.push(objNewPod);
+    let jsonSendDataOff = sendOffUserData(nID, null);
+    postFileFromServer("podcaster.php", "updateData=" + encodeURIComponent(jsonSendDataOff), updateDataCallback);
+    function updateDataCallback(data) {
+        if (data) {
+            document.getElementById('subscribeButton').innerHTML = "Unsubscribe";
+            document.getElementById('subscribeButton').onclick = function() { Unsubscribe(data); };
+        }
+        else
+            alert("Possible Network Error");
+    }
+}
+
+const sendOffUserData = (nID, objPData) => {
+    let jsonData = JSON.stringify(g_objUserData.data);
+    let sEncryptedData = encodeURIComponent(AESEncrypt(jsonData, g_objUserData.password));
+    let objSendDataOff = {};
+    objSendDataOff.id = g_objUserData.id;
+    objSendDataOff.data = sEncryptedData;
+    if (nID)
+        objSendDataOff.podID = nID;
+    if (objPData)
+        objSendDataOff.pData = objPData;
+    return JSON.stringify(objSendDataOff);
+}
+
+const Unsubscribe = (nID) => {
+    let objRemovedPod;
+    for (let i=0; i<g_objUserData.data.length; i++) {
+        if (g_objUserData.data[i].id == nID) {
+            objRemovedPod = encodeURIComponent(AESEncrypt(JSON.stringify(g_objUserData.data.splice(i, 1)[0]), g_objUserData.password));
+            break;
+        }
+    }
+    let jsonSendDataOff = sendOffUserData(null, objRemovedPod);
+    postFileFromServer("podcaster.php", "updateData=" + encodeURIComponent(jsonSendDataOff), removeDataCallback);
+    function removeDataCallback(data) {
+        if (data) {
+            document.getElementById('subscribeButton').innerHTML = "Subscribe";
+            let pData = JSON.parse(AESDecrypt(decodeURIComponent(data), g_objUserData.password));
+            document.getElementById('subscribeButton').onclick = function() { Subscribe(pData.id, pData.link, pData.title); };
+        }
+        else
+            alert("Possible Network Error");
+    }
 }
 
 const searchThroughEpisodes = (aItems) => {
@@ -252,11 +394,13 @@ const checkTypingDelay = (sSearch) => {
     }, 500);
 }
 
-const parseRSSLink = (sLink, functionCall) => {
+const parseRSSLink = (sLink, functionCall, nID) => {
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function() {
         if (4 == this.readyState && 200 == this.status)
-            functionCall(this.responseXML);
+            functionCall(this.responseXML, nID);
+        else if (this.status >= 400)
+            document.getElementById('feedback').innerHTML = "Invalid RSS/Atom Link";
     };
     xmlhttp.open("GET", sLink, true);
     xmlhttp.send();
@@ -283,7 +427,7 @@ const pullPodcasts = (sSearch) => {
         let objPodcasts = JSON.parse(data);
         let sPage = "<span style='font-size: 20px;'>Podcasts Within Search:</span><br>";
         for (let i=0; i<objPodcasts.length; i++) {
-            sPage += "<div class='podcastResult' onClick='parseRSSLink(\"" + objPodcasts[i].link + "\", PodcastOverviewFrame)'>"; // fix this out of quote hell
+            sPage += "<div class='podcastResult' onClick='parseRSSLink(\"" + objPodcasts[i].link + "\", PodcastOverviewFrame, " + objPodcasts[i].id + ")'>"; // fix this out of quote hell
             sPage += objPodcasts[i].title;
             sPage += "</div>";
         }
@@ -398,11 +542,41 @@ const GoToAccount = () => {
         SignUpFrame();
 }
 
+const GoToTheLatest = () => {
+    if (g_objUserData.bLoggedIn)
+        TheLatestFrame();
+    else
+        SignUpFrame();
+}
+
+const GoToSubscriptions = () => {
+    if (g_objUserData.bLoggedIn)
+        SubscriptionsFrame();
+    else
+        SignUpFrame();
+}
+
 const AccountFrame = () => {
     if (4 == g_objUserData.state) return;
     let sPage = "";
+    sPage += "<div class='g_main' style='border: 1px solid;'>";
+    sPage += "del account, change un | pw, stats we have bout u";
+    sPage += "</div>";
     document.getElementById('Main').innerHTML = sPage;
     g_objUserData.state = 4;
+}
+
+const SubscriptionsFrame = () => {
+    if (5 == g_objUserData.state) return;
+    let sPage = "";
+    for (let i=0; i<g_objUserData.data.length; i++) {
+        sPage += "<div class='podcastResult subResult' onClick='parseRSSLink(\""+g_objUserData.data[i].link+"\",PodcastOverviewFrame,"+g_objUserData.data[i].id+")'>";
+        sPage += g_objUserData.data[i].title;
+        sPage += "</div>";
+    }
+    sPage += "<div class='findSubscriptions' onClick='MainFrame()'>Find Podcasts to Subscribe To</div>";
+    document.getElementById('Main').innerHTML = sPage;
+    g_objUserData.state = 5;
 }
 
 const SignUpFrame = () => {
@@ -491,16 +665,21 @@ const checkNewAccount = () => {
 }
 
 const createAccount = (sUsername) => {
-    g_objUserData.password = HashThis(g_objUserData.password, 50000);
+    g_objUserData.username = sUsername;
+    g_objUserData.password = HashThis(g_objUserData.password, 25000);
 
     if (document.getElementById('Memory').checked) {
         setCookie('UN', sUsername, 999);
         setCookie('PW', g_objUserData.password, 999);
     }
 
-    g_objUserData.username = sUsername;
+    let sPassToSend = g_objUserData.password;
+    sPassToSend = HashThis(sPassToSend, 25000);
 
-    let jsonUserData = JSON.stringify(g_objUserData);
+    let objUserData = {};
+    objUserData.username = sUsername;
+    objUserData.password = sPassToSend;
+    let jsonUserData = JSON.stringify(objUserData);
     postFileFromServer("podcaster.php", "createAccount=" + encodeURIComponent(jsonUserData), createAccountCallback);
     function createAccountCallback(data) {
         if (data) {
@@ -521,7 +700,7 @@ const checkLogin = () => {
         document.getElementById('password').placeholder = "fill out password";
         return;
     }
-    sPassword = HashThis(sPassword, 50000);
+    sPassword = HashThis(sPassword, 25000);
 
     if (document.getElementById('Memory').checked)
         g_objUserData.rememberMe = true;
@@ -532,13 +711,22 @@ const checkLogin = () => {
 const Login = (UN, PW) => {
     g_objUserData.username = UN;
     g_objUserData.password = PW;
-    let jsonCredentials = JSON.stringify(g_objUserData);
+    PW = HashThis(PW, 25000);
+
+    let objCredentials = {};
+    objCredentials.username = UN;
+    objCredentials.password = PW;
+
+    let jsonCredentials = JSON.stringify(objCredentials);
     postFileFromServer("podcaster.php", "login=" + encodeURIComponent(jsonCredentials), LogInCallback);
     function LogInCallback(data) {
         if (data) {
             let objUserData = JSON.parse(data);
             g_objUserData.id = objUserData.id;
-            g_objUserData.data = objUserData.data;
+            if (objUserData.data)
+                g_objUserData.data = JSON.parse(AESDecrypt(decodeURIComponent(objUserData.data), g_objUserData.password));
+            else
+                g_objUserData.data = [];
             if (g_objUserData.rememberMe) {
                 setCookie('UN', g_objUserData.username, 999);
                 setCookie('PW', g_objUserData.password, 999);
@@ -548,8 +736,26 @@ const Login = (UN, PW) => {
             MainFrame();
         }
         else {
+            alert("Login Failed");
             g_objUserData = {};
             g_objUserData.state = 3;
         }
     }
+}
+
+const hex2a = (hex) => {
+    var str = '';
+    for (var i = 0; i < hex.length; i += 2)
+        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    return str;
+}
+
+const AESEncrypt = (sTextToEncrypt, sKey) => {
+    return CryptoJS.AES.encrypt(sTextToEncrypt, sKey);
+}
+
+const AESDecrypt = (sEncryptedText, sKey) => {
+    let decryptedText = CryptoJS.AES.decrypt(sEncryptedText, sKey);
+    let sDecrypted = hex2a(decryptedText.toString());
+    return sDecrypted;
 }

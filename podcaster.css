@@ -1,6 +1,6 @@
 /* global properties */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap');
-body { background-color: white; margin: 0; padding: 0; }
+body { background-color: white; margin: 0px; padding: 0px; }
 button { cursor: pointer; }
 * { box-sizing: border-box; font-family: 'Inter', sans-serif; font-weight: 300; }
 a { color: #0645ad; text-decoration: none; cursor: pointer; }
@@ -38,8 +38,9 @@ input:focus, textarea:focus { outline: none; }
 /* page load frame */
 .leftContainer { width: 240px; height: 100%; float: left; overflow-y: auto; text-align: center; border-radius: 4px; padding: 5px; }
 .podcastsDisplay { width: 350px; height: 100%; float: left; overflow-y: auto; text-align: center; margin-left: 10px; }
-.podcastResult { padding: 5px; margin-bottom: 5px; border-radius: 7px; cursor: pointer; background: #ffc; font-weight: 500; border: 1px solid black; }
+.podcastResult { padding: 5px; margin-bottom: 5px; border-radius: 7px; cursor: pointer; background: #ffc; font-weight: 500; border: 1px solid black; text-align: center; }
 .innerLeft { height: auto; border: 2px dotted; padding: 6px; overflow-y: auto; }
+.subsection { margin-top: 5px; border: 1px solid; padding: 5px; background: lightblue; font-weight: 300; cursor: pointer; }
 
 /* insert bug frame */
 .bugInsertTextBox { width: 95%; border: 1px solid black; height: 200px; padding: 4px; }
@@ -49,6 +50,7 @@ input:focus, textarea:focus { outline: none; }
 
 /* podcast overview frame */
 .episodeTitleDisplay { margin-bottom: 8px; border: 1px dotted blue; cursor: pointer; padding: 5px; }
+.subscribeButton { margin-top: 5px; margin-bottom: 3px; }
 
 /* sign in & login */
 .si { height: 500px; width: 80%; margin-right: auto; margin-left: auto; }
@@ -69,6 +71,17 @@ input:focus, textarea:focus { outline: none; }
 .si_rememberMe { float: left; font-size: 15px; cursor: pointer; margin-top: 3px; }
 .si_checkbox { cursor: pointer; height: 18px; float: left; }
 
+/* subscriptions frame */
+.findSubscriptions { width: 400px; text-align: center; font-size: 20px; font-weight: 700; border: 2px dotted blue; margin-right: auto; margin-left: auto; cursor: pointer; }
+.subResult { width: 400px; margin-right: auto; margin-left: auto; }
+
+/* add pod frame */
+.addPodContainer { width: 400px; margin-left: auto; margin-right: auto; }
+.addPodTA { height: 50px; padding: 4px; width: 400px; font-size: 18px; }
+.addPodButton { margin-top: 7px; width: 400px; margin-left: auto; margin-right: auto; height: 40px; font-size: 20px; }
+
+/* account frame */
+
 /* mobile styling */
 @media only screen and (max-width: 900px), only screen and (max-device-width: 900px) {
 /* sign in & login */
@@ -79,9 +92,9 @@ input:focus, textarea:focus { outline: none; }
 .si_container { width: 300px; margin-top: 10px; position: relative; left: 0; }
 .si_topBar { font-size: 20px; padding-top: 19px; }
 .si_textBox { width: 300px; }
-.si_rememberMe { position: absolute; left: 53%; bottom: 60px; -ms-transform: translate(-50%); transform: translate(-50%); }
-.si_checkbox { position: absolute; left: 29%; bottom: 75px; -ms-transform: translate(-50%); transform: translate(-50%); }
-.si_createButton { position: absolute; left: 50%; bottom: 40px; -ms-transform: translate(-50%); transform: translate(-50%); }
+.si_rememberMe { position: absolute; left: 53%; bottom: 175px; -ms-transform: translate(-50%); transform: translate(-50%); }
+.si_checkbox { position: absolute; left: 29%; bottom: 190px; -ms-transform: translate(-50%); transform: translate(-50%); }
+.si_createButton { position: absolute; left: 50%; bottom: 155px; -ms-transform: translate(-50%); transform: translate(-50%); }
 .si_loginButton { bottom: 195px; }
 .si_loginRemember { bottom: 215px; }
 .si_loginCheckbox { bottom: 230px; }

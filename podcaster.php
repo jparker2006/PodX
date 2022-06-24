@@ -12,6 +12,10 @@ else if (isset($_POST['login']))
     $jsonCredentials = $_POST['login'];
 else if (isset($_POST['createAccount']))
     $jsonUserData = $_POST['createAccount'];
+else if (isset($_POST['updateData']))
+    $jsonPCData = $_POST['updateData'];
+else if (isset($_POST['addPodcastToDatabase']))
+    $jsonNewPodcast = $_POST['addPodcastToDatabase'];
 
 if ($jsonPullData)
     $sFeedback = pullPodcasts ($jsonPullData);
@@ -25,6 +29,10 @@ else if ($jsonCredentials)
     $sFeedback = login ($jsonCredentials);
 else if ($jsonUserData)
     $sFeedback = createAccount ($jsonUserData);
+else if ($jsonPCData)
+    $sFeedback = updateData ($jsonPCData);
+else if ($jsonNewPodcast)
+    $sFeedback = addPodcastToDatabase ($jsonNewPodcast);
 
 echo $sFeedback;
 
@@ -185,6 +193,57 @@ function createAccount ($jsonUserData) {
     $dbconnect->close();
 
     return $row["id"];
+}
+
+function updateData ($jsonPCData) {
+    $objPCData = json_decode($jsonPCData);
+
+    $dbhost = 'localhost';
+    $dbuser = 'podcasts_site';
+    $dbpass = '0ShF3HctflFXwkhQSYte';
+    $db = "podcaster";
+    $dbconnect = new mysqli($dbhost, $dbuser, $dbpass, $db);
+
+    $stmt = $dbconnect->prepare("UPDATE users SET data=? WHERE id=?");
+    $stmt->bind_param("si", $objPCData->data, $objPCData->id);
+    $bStatus = $stmt->execute();
+    $stmt->close();
+    $dbconnect->close();
+    if (isset($objPCData->podID))
+        return $objPCData->podID;
+    return $objPCData->pData;
+}
+
+function addPodcastToDatabase ($jsonNewPodcast) {
+    $objNewPodcast = json_decode($jsonNewPodcast);
+
+    $dbhost = 'localhost';
+    $dbuser = 'podcasts_site';
+    $dbpass = '0ShF3HctflFXwkhQSYte';
+    $db = "podcaster";
+    $dbconnect = new mysqli($dbhost, $dbuser, $dbpass, $db);
+
+    $stmt = $dbconnect->prepare("SELECT * FROM podcasts WHERE link=?");
+    $stmt->bind_param("s", $objNewPodcast->link);
+    $stmt->execute();
+    $tResult = $stmt->get_result();
+    if (0 < $tResult->num_rows) {
+        $row = $tResult->fetch_assoc();
+        $objPodcast = new stdClass();
+        $objPodcast->id = $row["id"];
+        $objPodcast->link = $objNewPodcast->link;
+        return json_encode($objPodcast);
+    }
+    $stmt = $dbconnect->prepare("INSERT INTO podcasts (title, description, link) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $objNewPodcast->title, $objNewPodcast->description, $objNewPodcast->link);
+    $stmt->execute();
+    $sSQL = "SELECT COUNT(*) FROM podcasts";
+    $tResult = QueryDB($sSQL);
+    $nID = $tResult->fetch_assoc()["COUNT(*)"];
+    $objPodcast = new stdClass();
+    $objPodcast->id = $nID;
+    $objPodcast->link = $objNewPodcast->link;
+    return json_encode($objPodcast);
 }
 
 function QueryDB ($sSQL) {
