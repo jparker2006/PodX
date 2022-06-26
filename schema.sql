@@ -1,6 +1,6 @@
 CREATE TABLE podcasts (
     id int unsigned auto_increment primary key,
-    name varchar(150) not null,
+    title varchar(150) not null,
     description varchar(1000),
     link varchar(500) not null,
     created timestamp default current_timestamp
@@ -21,15 +21,6 @@ CREATE TABLE bugs (
     started_fix boolean default 0,
     created timestamp default current_timestamp
 );
-
--- aes encrypted udata (stored in users (line 13))
-struct data [{
-    "pod": { id, name, link }, -- maybe just id?
-    "start_in": time(secs),
-    "end_in": time(secs),
-    "played": [ #, location, pubdate ]
-}];
-
 
 
 

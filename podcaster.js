@@ -35,7 +35,6 @@ const Header = () => {
     sPage += "<div class='g_HeaderName' onClick='MainFrame()'>Podcaster</div>";
     sPage += "<div class='g_HeaderLink' style='width: 116px; left: 160px;' onClick='GoToSubscriptions()'>Subscriptions</div>";
     sPage += "<div class='g_HeaderLink' style='width: 98px; left: 283px; text-align: center;' onClick='GoToTheLatest()'>The Latest</div>";
-    sPage += "<div class='g_HeaderLink' style='width: 72px; left: 388px;' onClick='GoToAccount()'>Account</div>";
     sPage += "</div>";
     sPage += "</div>";
     document.getElementById('g_Header').innerHTML = sPage;
@@ -47,9 +46,9 @@ const ControlBar = () => {
     sPage += "<button class='g_audioButton' onClick='moveAudioPosition(" + false + ")'><img src='img/rewind.png' class='g_audioButtonIcon' style='margin-right: 4px;' /></button>";
     sPage += "<button class='g_audioButton' onClick='updatePlayingStateButton()'><img src='img/play.png' id='playingState' class='g_audioButtonIcon' /></button>";
     sPage += "<button class='g_audioButton' onClick='moveAudioPosition(" + true + ")'><img src='img/forward.png' class='g_audioButtonIcon' /></button>";
-    sPage += "<img src='img/mute.png' class='g_volumeIcon' style='left: 379px;' onClick='dragAudio(0)' />";
+    sPage += "<img src='img/mute.png' class='g_volumeIcon mute' onClick='dragAudio(0)' />";
     sPage += "<input id='volumeRange' type='range' class='g_timeRange g_audioRange center' min=0 max=1 step=any value=0.5 onChange='dragAudio()'>";
-    sPage += "<img src='img/fullvolume.png' class='g_volumeIcon' style='left: 557px;' onClick='dragAudio(1)' />";
+    sPage += "<img src='img/fullvolume.png' class='g_volumeIcon full' onClick='dragAudio(1)' />";
     sPage += "<div id='g_timeScroller' class='g_timeScroller'>";
     sPage += "<div id='beginTimeStamp' class='g_timeStampContainer'>0:00:00</div>"; // change to x:00 if podcast < 60 minutes
     sPage += "<input type='range' id='audioPosRange' class='g_timeRange center' min=0 max=1 step=any value=0 onChange='dragAudioPosition(" + true + ")'>";
@@ -69,6 +68,8 @@ const MainFrame = () => {
     sPage += "<input style='width: 90%;' onKeyUp='checkTypingDelay(this.value)' placeholder='Enter Search' /><br>";
     sPage += "<div class='subsection' onClick='AddPodFrame()'>Add a Podcast</div>";
     sPage += "<div class='subsection' onClick='BugFrame()'>Bug Report</div>";
+    if (!getCookie('UN')) // not logged in
+        sPage += "<div class='subsection' onClick='SignUpFrame()'>Make an Account</div>";
     sPage += "</div>";
     sPage += "</div>";
     sPage += "<div id='podcastsDisplay' class='podcastsDisplay'>";
@@ -90,10 +91,11 @@ const AddPodFrame = () => {
     g_objUserData.state = 6;
 }
 
+var t_checkIfDatasThere;
 const TheLatestFrame = () => {
     if (7 == g_objUserData.state) return;
     let sPage = "";
-    sPage += "<div class='g_main' style='border: 1px solid black;'>";
+    sPage += "<div id='latestEpisodes' class='g_main' style='overflow-y: auto;'>";
     if (0 == g_objUserData.data.length) {
         sPage += "<div class='findSubscriptions' style='padding: 7px;' onClick='MainFrame()'>Subscribe to Podcasts to See The Latest of Them</div>";
         sPage += "</div>";
@@ -101,6 +103,31 @@ const TheLatestFrame = () => {
         g_objUserData.state = 7;
         return;
     }
+    sPage += "</div>";
+    document.getElementById('Main').innerHTML = sPage;
+    pullLatestOfSubscriptions();
+}
+
+const finishTheLatestFrame = (aEpisodes) => {
+    let sPage = "";
+    for (let i=0; i<aEpisodes.length; i++) {
+        sPage += "<div id="+i+" class='latestEpisode'>";
+        sPage += aEpisodes[i].podName;
+        sPage += "<br><span style='font-weight: 500;'>";
+        sPage += aEpisodes[i].title;
+        sPage += "</span><br>";
+        sPage += String(aEpisodes[i].date).substring(0, 15);
+        sPage += "</div>";
+        sPage += "<br>";
+    }
+    document.getElementById('latestEpisodes').innerHTML = sPage;
+    for (let i=0; i<aEpisodes.length; i++) {
+        document.getElementById(i).onclick = function() { playPodcast(aEpisodes[i].episode); };
+    }
+    g_objUserData.state = 7;
+}
+
+const pullLatestOfSubscriptions = () => {
     let aNewEpisodes = [];
     for (let i=0; i<g_objUserData.data.length; i++) {
         fetch(g_objUserData.data[i].link)
@@ -110,17 +137,23 @@ const TheLatestFrame = () => {
             let aItems = data.querySelectorAll("item");
             for (let j=0; j<3; j++) {
                 let objEpisode = {};
-                objEpisode.data = aItems[j];
-                objEpisode.date = aItems[j].getElementsByTagName("pubDate")[0].textContent;
+                objEpisode.episode = aItems[j];
+                objEpisode.date = new Date(aItems[j].getElementsByTagName("pubDate")[0].textContent);
                 objEpisode.title = aItems[j].getElementsByTagName("title")[0].childNodes[0].nodeValue;
+                objEpisode.podName = aItems[j].ownerDocument.getElementsByTagName("title")[0].childNodes[0].nodeValue;
                 aNewEpisodes.push(objEpisode);
             }
         });
     }
-    console.log(aNewEpisodes);
-    sPage += "</div>";
-    document.getElementById('Main').innerHTML = sPage;
-    g_objUserData.state = 7;
+    t_checkIfDatasThere = setInterval(function() { checkData(aNewEpisodes); }, 500);
+}
+
+const checkData = (data) => {
+    if (g_objUserData.data.length * 3 != data.length)
+        return;
+    clearInterval(t_checkIfDatasThere);
+    data = data.sort((a, b) => a.date - b.date).reverse();
+    finishTheLatestFrame(data);
 }
 
 const initPodcastToAdd = () => {
@@ -533,13 +566,6 @@ const GetRandomCharacter = () => {
         "8","9","-","~","@",".","*","(",
         ")","_","+","#","="];
     return sChar[getRandomInt(0, sChar.length - 1)]
-}
-
-const GoToAccount = () => {
-    if (g_objUserData.bLoggedIn)
-        AccountFrame();
-    else
-        SignUpFrame();
 }
 
 const GoToTheLatest = () => {
